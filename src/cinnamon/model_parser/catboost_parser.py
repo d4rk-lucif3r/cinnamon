@@ -7,7 +7,7 @@ import tempfile
 from typing import Tuple
 from .abstract_tree_ensemble_parser import AbstractTreeEnsembleParser
 from ..common.math_utils import reverse_binary_representation
-
+import pathlib
 
 class CatBoostParser(AbstractTreeEnsembleParser):
     objective_task_map = {'RMSE': 'regression',
@@ -19,13 +19,16 @@ class CatBoostParser(AbstractTreeEnsembleParser):
     not_supported_objective = {}
 
     def __init__(self, model, model_type, iteration_range, task: str):
-        super().__init__(model, model_type, iteration_range)
         self.task = task
+        super().__init__(model, model_type, iteration_range)
 
     def parse(self, iteration_range: Tuple[int, int] = None):
         tmp_file = tempfile.NamedTemporaryFile()
-        self.original_model.save_model(tmp_file.name, format="json")
-        self.json_cb_model = json.load(open(tmp_file.name, "r"))
+        tmp_path = str(pathlib.Path(tmp_file.name).parent)
+        file_name = open(tmp_path+'anai_drift_detector', 'w')
+        self.original_model.save_model(file_name.name, format="json")
+        with open(r'{}'.format(file_name.name), 'r') as f:
+            self.json_cb_model = json.load(f)
         tmp_file.close()
 
         self.original_model_total_iterations = len(self.json_cb_model['oblivious_trees'])
